@@ -82,6 +82,24 @@ def sample(h, seed_ix, n):
   sample a sequence of integers from the model 
   h is memory state, seed_ix is seed letter for first time step
   """
+#   x = np.zeros((vocab_size, 2))
+#   x[:,0][seed_ix] = 1
+#   x[:,1][2] = 1
+#   ixes = []
+#   temp = 1
+#   print("Temperature: ", temp)
+#   alpha = 1./temp
+#   for t in xrange(n):
+#     h = np.tanh(np.dot(Wxh, x) + np.dot(Whh, h) + bh)
+#     y = np.dot(Why, h) + by
+#     p = np.exp((alpha)*y) / np.sum(np.exp((alpha)*y))
+#     ix = np.random.choice(range(vocab_size), p=p.ravel())
+#     x = np.zeros((vocab_size, 2))
+#     x[:,0][ix] = 1
+#     x[:,1][ix] = 1
+#     ixes.append(ix)
+#   return ixes
+
   x = np.zeros((vocab_size, 1))
   x[seed_ix] = 1
   ixes = []
@@ -97,6 +115,42 @@ def sample(h, seed_ix, n):
     x[ix] = 1
     ixes.append(ix)
   return ixes
+  
+def sample_starter(starter, h, seed_ix, n):
+  '''
+  Given a starter string starter, complete the string
+  h is memory state, seed_ix is seed letter for first time step
+  '''
+  starter_ixes = []
+  for char in starter:
+    starter_ixes.append(char_to_ix[char])
+  x = np.zeros((vocab_size, 1))
+  x[starter_ixes[0]] = 1
+  ixes = [starter_ixes[0]]
+  temp = 0.65
+  alpha = 1./temp
+  print "Temperature: ", temp
+
+    
+  for t in range(len(starter_ixes)-1):    
+    h = np.tanh(np.dot(Wxh, x) + np.dot(Whh, h) + bh)
+    y = np.dot(Why, h) + by
+    p = np.exp((alpha)*y) / np.sum(np.exp((alpha)*y))
+    ix = starter_ixes[t+1]
+    x = np.zeros((vocab_size, 1))
+    x[ix] = 1
+    ixes.append(ix)
+  
+  for t in xrange(n-len(starter_ixes)):
+    h = np.tanh(np.dot(Wxh, x) + np.dot(Whh, h) + bh)
+    y = np.dot(Why, h) + by
+    p = np.exp((alpha)*y) / np.sum(np.exp((alpha)*y))
+    ix = np.random.choice(range(vocab_size), p=p.ravel())
+    x = np.zeros((vocab_size, 1))
+    x[ix] = 1
+    ixes.append(ix)
+  return ixes
+  
 
 n, p = 0, 0
 mWxh, mWhh, mWhy = np.zeros_like(Wxh), np.zeros_like(Whh), np.zeros_like(Why)
@@ -112,8 +166,10 @@ while (n == 0):
 
   # sample from the model now and then
   if n % 100 == 0:
-    sample_ix = sample(hprev, inputs[0], 200)
+    starter = "lie"
+    sample_ix = sample_starter(starter, hprev, inputs[0], 300)
     txt = ''.join(ix_to_char[ix] for ix in sample_ix)
+    print "Sample starter string: ", starter
     print '----\n %s \n----' % (txt, )
 
   # forward seq_length characters through the net and fetch gradient
