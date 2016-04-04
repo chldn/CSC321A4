@@ -82,23 +82,6 @@ def sample(h, seed_ix, n):
   sample a sequence of integers from the model 
   h is memory state, seed_ix is seed letter for first time step
   """
-#   x = np.zeros((vocab_size, 2))
-#   x[:,0][seed_ix] = 1
-#   x[:,1][2] = 1
-#   ixes = []
-#   temp = 1
-#   print("Temperature: ", temp)
-#   alpha = 1./temp
-#   for t in xrange(n):
-#     h = np.tanh(np.dot(Wxh, x) + np.dot(Whh, h) + bh)
-#     y = np.dot(Why, h) + by
-#     p = np.exp((alpha)*y) / np.sum(np.exp((alpha)*y))
-#     ix = np.random.choice(range(vocab_size), p=p.ravel())
-#     x = np.zeros((vocab_size, 2))
-#     x[:,0][ix] = 1
-#     x[:,1][ix] = 1
-#     ixes.append(ix)
-#   return ixes
 
   x = np.zeros((vocab_size, 1))
   x[seed_ix] = 1
@@ -114,6 +97,8 @@ def sample(h, seed_ix, n):
     x = np.zeros((vocab_size, 1))
     x[ix] = 1
     ixes.append(ix)
+    # if ':' == ix_to_char[ixes[-2]]:
+    #   print np.argmax(h)
   return ixes
   
 def sample_starter(starter, h, seed_ix, n):
@@ -127,25 +112,28 @@ def sample_starter(starter, h, seed_ix, n):
   x = np.zeros((vocab_size, 1))
   x[starter_ixes[0]] = 1
   ixes = [starter_ixes[0]]
-  temp = 0.65
+  temp = 0.8
   alpha = 1./temp
   print "Temperature: ", temp
 
-    
-  for t in range(len(starter_ixes)-1):    
-    h = np.tanh(np.dot(Wxh, x) + np.dot(Whh, h) + bh)
-    y = np.dot(Why, h) + by
-    p = np.exp((alpha)*y) / np.sum(np.exp((alpha)*y))
-    ix = starter_ixes[t+1]
-    x = np.zeros((vocab_size, 1))
-    x[ix] = 1
-    ixes.append(ix)
+  #   
+  # for t in range(len(starter_ixes)-1):    
+  #   h = np.tanh(np.dot(Wxh, x) + np.dot(Whh, h) + bh)
+  #   y = np.dot(Why, h) + by
+  #   p = np.exp((alpha)*y) / np.sum(np.exp((alpha)*y))
+  #   x = np.zeros((vocab_size, 1))
+  #   x[ix] = 1
+  #   ixes.append(ix)
   
-  for t in xrange(n-len(starter_ixes)):
+  for t in xrange(n):
     h = np.tanh(np.dot(Wxh, x) + np.dot(Whh, h) + bh)
     y = np.dot(Why, h) + by
     p = np.exp((alpha)*y) / np.sum(np.exp((alpha)*y))
-    ix = np.random.choice(range(vocab_size), p=p.ravel())
+    if t < len(starter_ixes) - 1:
+      # print "t: ", t, "len(starter_ixes: ", len(starter_ixes)
+      ix = starter_ixes[t+1]
+    else:
+      ix = np.random.choice(range(vocab_size), p=p.ravel())
     x = np.zeros((vocab_size, 1))
     x[ix] = 1
     ixes.append(ix)
@@ -166,8 +154,15 @@ while (n == 0):
 
   # sample from the model now and then
   if n % 100 == 0:
-    starter = "lie"
-    sample_ix = sample_starter(starter, hprev, inputs[0], 300)
+    # part 1
+    print "Part 1"
+    sample_ix = sample(hprev, inputs[0], 200)
+    txt = ''.join(ix_to_char[ix] for ix in sample_ix)
+    print '----\n %s \n----' % (txt, )    
+    # part 2
+    print "Part 2"
+    starter = "How about that ya silly boy"
+    sample_ix = sample_starter(starter, hprev, inputs[0], 200)
     txt = ''.join(ix_to_char[ix] for ix in sample_ix)
     print "Sample starter string: ", starter
     print '----\n %s \n----' % (txt, )
