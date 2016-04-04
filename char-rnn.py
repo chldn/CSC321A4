@@ -100,7 +100,33 @@ def sample(h, seed_ix, n):
     # if ':' == ix_to_char[ixes[-2]]:
     #   print np.argmax(h)
   return ixes
+
+def get_key_weights(x, Wxh, h, Why):
+  # get max 10 indices of (Wxh*x) from input x = ':'OHE
+  wxh_max_idxes = (np.abs(np.dot(Wxh, x)).T).argsort()[0][-10:] # array([170, 185, 114,  95, 187, 100, 208,  43,  73, 242])
+  wxh_maxes = {i:Wxh[:,9][i] for i in wxh_max_idxes} # gets values of Wxh 
+  # wxh_maxes = {100: 4.8291898683713592, 73: -5.0570966540231206, 170: -4.1043252012334079, 43: -5.0123830835306142, 242: -7.8725814225256752, 208: -4.8843477232065506, 114: 4.2650028601838068, 185: 4.1733393419101619, 187: 4.5475188498323647, 95: -4.49315921659234}
   
+  #get max 10 indices of (Why*h) going into the '\n' character
+  newline_Ws = Why[0,:].reshape((250,1)).T
+  nlWs_h = (newline_Ws *h.T)
+  nlWsh_max_idxes = (np.abs(nlWs_h)).argsort()[0][-10:]  # array([143, 170, 114, 185, 108, 166, 187, 210,  73, 100])
+  nlWsh_maxes = {i:(Why[0,:][i], (Why[0,:][i]*h[i])[0])  for i in nlWsh_max_idxes} 
+  # nlWsh_maxes = {100: 2.6727123603897232, 166: -1.7058694844876847, 73: -2.244658975368536, 170: -1.2923192028088104, 108: 1.4269114887069017, 210: -2.1593540170222068, 143: -1.8318692082250172, 114: 1.3415086080491887, 185: 1.3977953774511229, 187: 2.0301543133308124}
+  
+  intersxn = {}
+  for key in wxh_maxes:
+    if key in nlWsh_maxes:
+      if (wxh_maxes[key]*nlWsh_maxes[key][1] > 0):
+        intersxn[key] = (wxh_maxes[key], nlWsh_maxes[key],)
+  
+  return intersxn
+  
+  
+  
+  
+  
+
 def sample_starter(starter, h, seed_ix, n):
   '''
   Given a starter string starter, complete the string
@@ -134,6 +160,15 @@ def sample_starter(starter, h, seed_ix, n):
       ix = starter_ixes[t+1]
     else:
       ix = np.random.choice(range(vocab_size), p=p.ravel())
+      key_weights = get_key_weights(x, Wxh, h, Why) # {idx:(Wxh, (Why, Why*h)) }
+      print('{idx:(Wxh, (Why, Why*h))}')
+      print(key_weights)
+    print("t: ", t)
+    print( "argmax(h) (after tanh)", np.argmax(h))
+    print( "np.argmax(np.dot(Wxh, x))", np.argmax(np.dot(Wxh, x)))
+    print( "(Wxh*x)[max_index]", np.dot(Wxh, x)[np.argmax(h)])
+    print( "np.argmax(np.dot(Whh, h))", np.argmax(np.dot(Whh, h)))
+    print( "(Whh*h)[max_index]", np.dot(Whh, h)[np.argmax(h)])
     x = np.zeros((vocab_size, 1))
     x[ix] = 1
     ixes.append(ix)
@@ -161,8 +196,8 @@ while (n == 0):
     print '----\n %s \n----' % (txt, )    
     # part 2
     print "Part 2"
-    starter = "How about that ya silly boy"
-    sample_ix = sample_starter(starter, hprev, inputs[0], 200)
+    starter = ":::::::::::::::"
+    sample_ix = sample_starter(starter, hprev, inputs[0], 20)
     txt = ''.join(ix_to_char[ix] for ix in sample_ix)
     print "Sample starter string: ", starter
     print '----\n %s \n----' % (txt, )
